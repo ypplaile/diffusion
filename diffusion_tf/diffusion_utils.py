@@ -45,7 +45,9 @@ def noise_like(shape, noise_fn=tf.random_normal, repeat=False, dtype=tf.float32)
   repeat_noise = lambda: tf.repeat(noise_fn(shape=(1, *shape[1:]), dtype=dtype), repeats=shape[0], axis=0)
   noise = lambda: noise_fn(shape=shape, dtype=dtype)
   return repeat_noise() if repeat else noise()
-
+# noise_fn.shape[0] = 1; repeat_noise then repeat noise in the first dim
+# both repeat_noise & noise has shape 'shape', 
+# so the 1st dim of 'noise_fn' is the TIME SERIES?
 
 class GaussianDiffusion:
   """
@@ -57,18 +59,18 @@ class GaussianDiffusion:
 
     assert isinstance(betas, np.ndarray)
     self.np_betas = betas = betas.astype(np.float64)  # computations here in float64 for accuracy
-    assert (betas > 0).all() and (betas <= 1).all()
-    timesteps, = betas.shape
+    assert (betas > 0).all() and (betas <= 1).all() # ().all  check if all items are true
+    timesteps, = betas.shape # so first dim for 'betas' is time step, then the spatial coord dims...
     self.num_timesteps = int(timesteps)
 
     alphas = 1. - betas
-    alphas_cumprod = np.cumprod(alphas, axis=0)
+    alphas_cumprod = np.cumprod(alphas, axis=0) # at bar
     alphas_cumprod_prev = np.append(1., alphas_cumprod[:-1])
     assert alphas_cumprod_prev.shape == (timesteps,)
 
-    self.betas = tf.constant(betas, dtype=tf_dtype)
-    self.alphas_cumprod = tf.constant(alphas_cumprod, dtype=tf_dtype)
-    self.alphas_cumprod_prev = tf.constant(alphas_cumprod_prev, dtype=tf_dtype)
+    self.betas = tf.constant(betas, dtype=tf_dtype) #np to tf
+    self.alphas_cumprod = tf.constant(alphas_cumprod, dtype=tf_dtype) #at
+    self.alphas_cumprod_prev = tf.constant(alphas_cumprod_prev, dtype=tf_dtype) #at-1
 
     # calculations for diffusion q(x_t | x_{t-1}) and others
     self.sqrt_alphas_cumprod = tf.constant(np.sqrt(alphas_cumprod), dtype=tf_dtype)
@@ -97,7 +99,7 @@ class GaussianDiffusion:
     bs, = t.shape
     assert x_shape[0] == bs
     out = tf.gather(a, t)
-    assert out.shape == [bs]
+    assert out.shape == [bs] #len(out)=t.shape[0]
     return tf.reshape(out, [bs] + ((len(x_shape) - 1) * [1]))
 
   def q_mean_variance(self, x_start, t):
