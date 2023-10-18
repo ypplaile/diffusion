@@ -10,7 +10,10 @@ def normal_kl(mean1, logvar1, mean2, logvar2):
   """
   return 0.5 * (-1.0 + logvar2 - logvar1 + tf.exp(logvar1 - logvar2)
                 + tf.squared_difference(mean1, mean2) * tf.exp(-logvar2))
-
+  """
+  https://statproofbook.github.io/P/norm-kl.html
+  proof of KL for p,q
+  """
 
 def _warmup_beta(beta_start, beta_end, num_diffusion_timesteps, warmup_frac):
   betas = beta_end * np.ones(num_diffusion_timesteps, dtype=np.float64)
